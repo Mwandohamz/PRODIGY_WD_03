@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tic-Tac-Toe</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-image: url('https://i.pinimg.com/564x/89/f9/ca/89f9ca482fa98e2af111ccc1b455f213.jpg');
+            background-size: cover;
+            background-position: center;
+            color: #FC4100;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+        }
+
+        h1 {
+            font-size: 2.5em;
+            margin-bottom: 20px;
+        }
+
+        .intro, .game-board, .winner-popup, .controls {
+            background-color: rgba(255, 255, 255, 0.8);
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        label {
+            font-size: 1.2em;
+            color: #00215E;
+        }
+
+        input[type="text"] {
+            padding: 10px;
+            font-size: 1em;
+            border: 2px solid #00215E;
+            border-radius: 5px;
+            margin-left: 10px;
+        }
+
+        .buttons {
+            margin-top: 20px;
+        }
+
+        button {
+            padding: 10px 20px;
+            font-size: 1em;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 0 10px;
+            background-color: #FFC55A;
+            color: #00215E;
+            transition: background-color 0.3s ease;
+        }
+
+        button:hover {
+            background-color: #FC4100;
+            color: #FFFFFF;
+        }
+
+        .game-board {
+            display: grid;
+            grid-template-columns: repeat(3, 100px);
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        .cell {
+            width: 100px;
+            height: 100px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2em;
+            background-color: #2C4E80;
+            color: #FFC55A;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+        .cell:hover {
+            background-color: #FC4100;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        .winner-popup {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: #FFC55A;
+            color: #00215E;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+            text-align: center;
+        }
+
+        .winner-popup button {
+            margin-top: 10px;
+        }
+
+        .controls {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        .player-info {
+            margin-bottom: 20px;
+            font-size: 1.2em;
+            color: #00215E;
+        }
+    </style>
+</head>
+<body>
+    <div class="intro">
+        <h1>Tic-Tac-Toe</h1>
+        <div class="form-group">
+            <label for="player1">Player 1:</label>
+            <input type="text" id="player1" placeholder="Enter name">
+        </div>
+        <div class="form-group">
+            <label for="player2">Player 2:</label>
+            <input type="text" id="player2" placeholder="Enter name">
+        </div>
+        <div class="form-group">
+            <label for="play-against-computer">Play Against Computer:</label>
+            <input type="checkbox" id="play-against-computer">
+        </div>
+        <div class="buttons">
+            <button onclick="startGame()">Start Game</button>
+        </div>
+    </div>
+
+    <div class="game-board hidden"></div>
+    <div class="player-info hidden" id="player-turn"></div>
+
+    <div class="winner-popup hidden">
+        <p id="winner-message"></p>
+        <button onclick="restartGame()">Restart Game</button>
+        <button onclick="goHome()">Go to Home</button>
+    </div>
+
+    <script>
+        let board = ['', '', '', '', '', '', '', '', ''];
+        let currentPlayer = 'X';
+        let gameActive = false;
+        let player1 = '';
+        let player2 = '';
+        let playAgainstComputer = false;
+
+        function startGame() {
+            player1 = document.getElementById('player1').value;
+            player2 = document.getElementById('player2').value;
+            playAgainstComputer = document.getElementById('play-against-computer').checked;
+            if (!player1 || (!player2 && !playAgainstComputer)) {
+                alert('Please enter names for both players or choose to play against the computer.');
+                return;
+            }
+            document.querySelector('.intro').classList.add('hidden');
+            document.querySelector('.game-board').classList.remove('hidden');
+            document.getElementById('player-turn').classList.remove('hidden');
+            document.getElementById('player-turn').textContent = `${player1}'s turn (X)`;
+            board = ['', '', '', '', '', '', '', '', ''];
+            currentPlayer = 'X';
+            gameActive = true;
+            renderBoard();
+        }
+
+        function renderBoard() {
+            const gameBoard = document.querySelector('.game-board');
+            gameBoard.innerHTML = '';
+            board.forEach((cell, index) => {
+                const cellElement = document.createElement('div');
+                cellElement.classList.add('cell');
+                cellElement.textContent = cell;
+                cellElement.addEventListener('click', () => handleCellClick(index));
+                gameBoard.appendChild(cellElement);
+            });
+        }
+
+        function handleCellClick(index) {
+            if (board[index] || !gameActive) return;
+            board[index] = currentPlayer;
+            renderBoard();
+            if (checkWin()) {
+                displayWinner(currentPlayer === 'X' ? player1 : player2);
+                return;
+            }
+            if (board.every(cell => cell)) {
+                displayWinner('No one');
+                return;
+            }
+            currentPlayer = currentPlayer === 'X' ? 'O' : 'X';
+            document.getElementById('player-turn').textContent = currentPlayer === 'X' ? `${player1}'s turn (X)` : `${playAgainstComputer ? 'Computer' : player2}'s turn (O)`;
+            if (playAgainstComputer && currentPlayer === 'O') {
+                setTimeout(aiMove, 500);
+            }
+        }
+
+        function aiMove() {
+            let emptyCells = board.map((cell, index) => cell === '' ? index : null).filter(index => index !== null);
+            let randomIndex = emptyCells[Math.floor(Math.random() * emptyCells.length)];
+            board[randomIndex] = currentPlayer;
+            renderBoard();
+            if (checkWin()) {
+                displayWinner('Computer');
+                return;
+            }
+            if (board.every(cell => cell)) {
+                displayWinner('No one');
+                return;
+            }
+            currentPlayer = 'X';
+            document.getElementById('player-turn').textContent = `${player1}'s turn (X)`;
+        }
+
+        function checkWin() {
+            const winConditions = [
+                [0, 1, 2],
+                [3, 4, 5],
+                [6, 7, 8],
+                [0, 3, 6],
+                [1, 4, 7],
+                [2, 5, 8],
+                [0, 4, 8],
+                [2, 4, 6]
+            ];
+
+            return winConditions.some(condition => {
+                return condition.every(index => board[index] === currentPlayer);
+            });
+        }
+
+        function displayWinner(winner) {
+            gameActive = false;
+            const winnerPopup = document.querySelector('.winner-popup');
+            document.getElementById('winner-message').textContent = `${winner} wins!`;
+            winnerPopup.classList.remove('hidden');
+        }
+
+        function restartGame() {
+            document.querySelector('.winner-popup').classList.add('hidden');
+            document.getElementById('player-turn').classList.add('hidden');
+            document.querySelector('.intro').classList.remove('hidden');
+            document.querySelector('.game-board').classList.add('hidden');
+        }
+
+        function goHome() {
+            document.querySelector('.winner-popup').classList.add('hidden');
+            document.querySelector('.intro').classList.remove('hidden');
+            document.querySelector('.game-board').classList.add('hidden');
+            document.getElementById('player1').value = '';
+            document.getElementById('player2').value = '';
+            document.getElementById('play-against-computer').checked = false;
+        }
+    </script>
+</body>
+</html>
